@@ -1,0 +1,23 @@
+# Flutter
+.dart_tool/
+.packages
+.pub-cache/
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# Platform specific
+android/.gradle/
+android/local.properties
+android/key.properties
+ios/Pods/
+ios/.symlinks/
+macos/Pods/
+
+# Windows
+windows/flutter/ephemeral/
+
+# Logs
+*.log
