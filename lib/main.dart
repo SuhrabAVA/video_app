@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
@@ -45,13 +47,25 @@ class VideoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final base = ThemeData.dark(useMaterial3: true);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'video_app',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        textTheme: GoogleFonts.manropeTextTheme(),
-        scaffoldBackgroundColor: const Color(0xFF070914),
+      theme: base.copyWith(
+        textTheme: GoogleFonts.manropeTextTheme(base.textTheme),
+        scaffoldBackgroundColor: const Color(0xFF050710),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white.withValues(alpha: 0.05),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+          ),
+        ),
       ),
       home: const AuthGate(),
     );
@@ -138,74 +152,102 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1A1F6A), Color(0xFF070914), Color(0xFF0F2B36)],
+            colors: [Color(0xFF4E16BC), Color(0xFF070914), Color(0xFF007991)],
           ),
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Card(
-              color: Colors.white.withValues(alpha: 0.09),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '🎬 video_app',
-                      style: GoogleFonts.manrope(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Войдите в систему для доступа к видеобиблиотеке.',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _email,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _password,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Пароль'),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
+        child: Stack(
+          children: [
+            Positioned(
+              left: -80,
+              top: -70,
+              child: _orb(const Color(0xFF8F7CFF), 280),
+            ),
+            Positioned(
+              right: -110,
+              bottom: -120,
+              child: _orb(const Color(0xFF2BD2FF), 330),
+            ),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Card(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.22)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(26),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ElevatedButton(
-                          onPressed: _loading ? null : () => _auth(register: false),
-                          child: const Text('Войти'),
+                        Text(
+                          '✨ video_app',
+                          style: GoogleFonts.manrope(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                        const SizedBox(width: 10),
-                        OutlinedButton(
-                          onPressed: _loading ? null : () => _auth(register: true),
-                          child: const Text('Регистрация'),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Войдите в систему, чтобы открыть персональную видеоленту.',
+                          style:
+                              TextStyle(color: Colors.white.withValues(alpha: 0.88)),
                         ),
+                        const SizedBox(height: 18),
+                        TextField(
+                          controller: _email,
+                          decoration: const InputDecoration(labelText: 'Логин (Email)'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _password,
+                          obscureText: true,
+                          decoration: const InputDecoration(labelText: 'Пароль'),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            FilledButton.icon(
+                              onPressed: _loading ? null : () => _auth(register: false),
+                              icon: const Icon(Icons.login),
+                              label: const Text('Войти'),
+                            ),
+                            const SizedBox(width: 10),
+                            OutlinedButton.icon(
+                              onPressed: _loading ? null : () => _auth(register: true),
+                              icon: const Icon(Icons.person_add_alt_1),
+                              label: const Text('Регистрация'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (_loading) const LinearProgressIndicator(),
+                        if (_message.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(_message),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    if (_loading) const LinearProgressIndicator(),
-                    if (_message.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(_message),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _orb(Color color, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: 0.22),
       ),
     );
   }
@@ -217,8 +259,9 @@ class VideoCategory {
   final String id;
   final String name;
 
-  factory VideoCategory.fromMap(Map<String, dynamic> map) =>
-      VideoCategory(id: map['id'] as String, name: map['name'] as String);
+  factory VideoCategory.fromMap(Map<String, dynamic> map) {
+    return VideoCategory(id: map['id'] as String, name: map['name'] as String);
+  }
 }
 
 class VideoItem {
@@ -232,6 +275,7 @@ class VideoItem {
     required this.categoryName,
     required this.likes,
     required this.views,
+    required this.isLikedByMe,
   });
 
   final String id;
@@ -243,9 +287,12 @@ class VideoItem {
   final String categoryName;
   final int likes;
   final int views;
+  final bool isLikedByMe;
 
-  factory VideoItem.fromMap(Map<String, dynamic> map) {
-    final categoryMap = (map['video_categories'] as Map<String, dynamic>?);
+  factory VideoItem.fromMap(Map<String, dynamic> map, {required User user}) {
+    final categoryMap = map['video_categories'] as Map<String, dynamic>?;
+    final reactions = (map['video_reactions'] as List?) ?? [];
+
     return VideoItem(
       id: map['id'] as String,
       title: map['title'] as String,
@@ -256,6 +303,10 @@ class VideoItem {
       categoryName: (categoryMap?['name'] as String?) ?? 'Без категории',
       likes: (map['likes'] as num?)?.toInt() ?? 0,
       views: (map['views'] as num?)?.toInt() ?? 0,
+      isLikedByMe: reactions.any((r) =>
+          r is Map<String, dynamic> &&
+          r['user_id'] == user.id &&
+          r['reaction_type'] == 'like'),
     );
   }
 }
@@ -317,10 +368,8 @@ class _HomeScreenState extends State<HomeScreen> {
           .maybeSingle();
       _role = (roleData?['role'] as String?) ?? 'viewer';
 
-      final categoriesData = await _client
-          .from('video_categories')
-          .select('id,name')
-          .order('name');
+      final categoriesData =
+          await _client.from('video_categories').select('id,name').order('name');
       _categories = (categoriesData as List)
           .map((e) => VideoCategory.fromMap(Map<String, dynamic>.from(e)))
           .toList();
@@ -331,11 +380,16 @@ class _HomeScreenState extends State<HomeScreen> {
       final videosData = await _client
           .from('video_items')
           .select(
-            'id,title,description,thumbnail_url,video_url,category_id,likes,views,video_categories(name)',
+            'id,title,description,thumbnail_url,video_url,category_id,likes,views,video_categories(name),video_reactions(user_id,reaction_type)',
           )
           .order('created_at', ascending: false);
       _videos = (videosData as List)
-          .map((e) => VideoItem.fromMap(Map<String, dynamic>.from(e)))
+          .map(
+            (e) => VideoItem.fromMap(
+              Map<String, dynamic>.from(e),
+              user: widget.user,
+            ),
+          )
           .toList();
     } catch (e) {
       _adminMessage = 'Ошибка загрузки: $e';
@@ -347,9 +401,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _addCategory() async {
     if (_newCategory.text.trim().isEmpty) return;
     try {
-      await _client
-          .from('video_categories')
-          .insert({'name': _newCategory.text.trim(), 'created_by': widget.user.id});
+      await _client.from('video_categories').insert({
+        'name': _newCategory.text.trim(),
+        'created_by': widget.user.id,
+      });
       _newCategory.clear();
       _adminMessage = 'Категория добавлена';
       await _loadAll();
@@ -387,6 +442,51 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _watchVideo(VideoItem video) async {
+    await _client.rpc('increment_video_views', params: {'video_id_input': video.id});
+    await launchUrl(
+      Uri.parse(video.videoUrl),
+      mode: LaunchMode.externalApplication,
+    );
+    await _loadAll();
+  }
+
+  Future<void> _toggleLike(VideoItem video) async {
+    try {
+      if (video.isLikedByMe) {
+        await _client
+            .from('video_reactions')
+            .delete()
+            .eq('video_id', video.id)
+            .eq('user_id', widget.user.id)
+            .eq('reaction_type', 'like');
+        await _client.rpc('decrement_video_likes', params: {'video_id_input': video.id});
+      } else {
+        await _client.from('video_reactions').insert({
+          'video_id': video.id,
+          'user_id': widget.user.id,
+          'reaction_type': 'like',
+        });
+        await _client.rpc('increment_video_likes', params: {'video_id_input': video.id});
+      }
+
+      await _loadAll();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Не удалось поставить лайк: $e')),
+      );
+    }
+  }
+
+  Future<void> _shareVideo(VideoItem video) async {
+    await Clipboard.setData(ClipboardData(text: video.videoUrl));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ссылка скопирована в буфер обмена')),
+    );
+  }
+
   Future<void> _logout() async {
     await _client.auth.signOut();
     if (!mounted) return;
@@ -414,7 +514,7 @@ class _HomeScreenState extends State<HomeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF0E1140), Color(0xFF070914), Color(0xFF0A2735)],
+            colors: [Color(0xFF120C47), Color(0xFF060913), Color(0xFF01303D)],
           ),
         ),
         child: SafeArea(
@@ -431,20 +531,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (_canManage) _buildAdminPanel(),
                       if (_canManage) const SizedBox(height: 14),
                       Expanded(
-                        child: GridView.builder(
-                          itemCount: filtered.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 380,
-                            childAspectRatio: 0.85,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                          itemBuilder: (context, index) {
-                            final v = filtered[index];
-                            return _buildVideoCard(v);
-                          },
-                        ),
+                        child: filtered.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'Ничего не найдено. Попробуйте изменить фильтр.',
+                                ),
+                              )
+                            : GridView.builder(
+                                itemCount: filtered.length,
+                                gridDelegate:
+                                    const SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 380,
+                                  childAspectRatio: 0.82,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final v = filtered[index];
+                                  return _buildVideoCard(v);
+                                },
+                              ),
                       ),
                     ],
                   ),
@@ -457,6 +563,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader() {
     return Card(
       color: Colors.white.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
@@ -468,16 +575,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'Лента видео',
                     style: GoogleFonts.manrope(
-                      fontSize: 24,
+                      fontSize: 25,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Роль: $_role'),
+                  Text('Роль: $_role • Пользователь: ${widget.user.email ?? widget.user.id}'),
                 ],
               ),
             ),
-            ElevatedButton(onPressed: _logout, child: const Text('Выйти')),
+            FilledButton.icon(
+              onPressed: _logout,
+              icon: const Icon(Icons.logout),
+              label: const Text('Выйти'),
+            ),
           ],
         ),
       ),
@@ -487,11 +598,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchFilters() {
     return Card(
       color: Colors.white.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Row(
+        child: Wrap(
+          runSpacing: 8,
+          spacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Expanded(
+            SizedBox(
+              width: 420,
               child: TextField(
                 controller: _search,
                 decoration: const InputDecoration(
@@ -500,7 +616,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
             DropdownButton<String?>(
               value: _selectedCategoryId,
               hint: const Text('Все категории'),
@@ -527,6 +642,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildAdminPanel() {
     return Card(
       color: Colors.white.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -534,10 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               'Панель добавления (Technical Lead / CMM Specialist)',
-              style: GoogleFonts.manrope(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
+              style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
             Row(
@@ -545,12 +658,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: TextField(
                     controller: _newCategory,
-                    decoration:
-                        const InputDecoration(labelText: 'Новая категория'),
+                    decoration: const InputDecoration(labelText: 'Новая категория'),
                   ),
                 ),
                 const SizedBox(width: 10),
-                ElevatedButton(
+                FilledButton(
                   onPressed: _addCategory,
                   child: const Text('Добавить категорию'),
                 ),
@@ -593,7 +705,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   setState(() => _selectedCreateCategoryId = value),
             ),
             const SizedBox(height: 8),
-            ElevatedButton(onPressed: _addVideo, child: const Text('Добавить видео')),
+            FilledButton.icon(
+              onPressed: _addVideo,
+              icon: const Icon(Icons.upload),
+              label: const Text('Добавить видео'),
+            ),
             if (_adminMessage.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(_adminMessage),
@@ -606,24 +722,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildVideoCard(VideoItem v) {
     return Card(
-      color: Colors.white.withValues(alpha: 0.09),
+      color: Colors.white.withValues(alpha: 0.10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: Image.network(
-                (v.thumbnailUrl?.isNotEmpty ?? false)
-                    ? v.thumbnailUrl!
-                    : 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (_, __, ___) => Container(
-                  color: Colors.black26,
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.movie, size: 48),
-                ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    (v.thumbnailUrl?.isNotEmpty ?? false)
+                        ? v.thumbnailUrl!
+                        : 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.black26,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.movie, size: 48),
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      child: Text(v.categoryName),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -636,28 +770,39 @@ class _HomeScreenState extends State<HomeScreen> {
                   v.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
-                const SizedBox(height: 6),
-                Text('${v.categoryName} • 👁 ${v.views} • 👍 ${v.likes}'),
+                const SizedBox(height: 5),
+                Text('${v.views} просмотров • ${v.likes} лайков'),
                 const SizedBox(height: 6),
                 Text(
-                  v.description ?? 'Без описания',
+                  v.description?.isNotEmpty == true
+                      ? v.description!
+                      : 'Описание отсутствует',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 9),
                 Wrap(
                   spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    FilledButton(
-                      onPressed: () {},
-                      child: const Text('Смотреть'),
+                    FilledButton.icon(
+                      onPressed: () => _watchVideo(v),
+                      icon: const Icon(Icons.play_circle_fill),
+                      label: const Text('Смотреть'),
                     ),
-                    OutlinedButton(onPressed: () {}, child: const Text('Лайк')),
-                    OutlinedButton(
-                      onPressed: () {},
-                      child: const Text('Поделиться'),
+                    OutlinedButton.icon(
+                      onPressed: () => _toggleLike(v),
+                      icon: Icon(
+                        v.isLikedByMe ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
+                      ),
+                      label: Text(v.isLikedByMe ? 'Лайкнут' : 'Лайк'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _shareVideo(v),
+                      icon: const Icon(Icons.share),
+                      label: const Text('Поделиться'),
                     ),
                   ],
                 ),
